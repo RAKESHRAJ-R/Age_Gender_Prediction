@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 
 def faceBox(faceNet, frame, conf_threshold=0.8):
     frameHeight = frame.shape[0]
@@ -9,8 +10,7 @@ def faceBox(faceNet, frame, conf_threshold=0.8):
     bboxs = []
     for i in range(detection.shape[2]):
         confidence = detection[0, 0, i, 2]
-        confidence_threshold=0.8
-        if confidence > confidence_threshold:
+        if confidence > conf_threshold:
             x1 = int(detection[0, 0, i, 3] * frameWidth)
             y1 = int(detection[0, 0, i, 4] * frameHeight)
             x2 = int(detection[0, 0, i, 5] * frameWidth)
@@ -55,24 +55,24 @@ while True:
         if face.size == 0:
             continue
         
-        # Resize the face with aspect ratio consideration
+        # Resize the face for prediction
         face_resized = cv2.resize(face, (227, 227), interpolation=cv2.INTER_AREA)
         blob = cv2.dnn.blobFromImage(face_resized, 1.0, (227, 227), MODEL_MEAN_VALUES, swapRB=True)
 
         # Predict gender
         genderNet.setInput(blob)
         genderPred = genderNet.forward()
-        gender = genderList[genderPred[0].argmax()]
+        gender = genderList[np.argmax(genderPred)]
 
         # Predict age
         ageNet.setInput(blob)
         agePred = ageNet.forward()
-        age = ageList[agePred[0].argmax()]
+        age = ageList[np.argmax(agePred)]
 
-        label = "{},{}".format(gender, age)
+        label = "{}, {}".format(gender, age)
         cv2.putText(frame, label, (bbox[0], bbox[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
     
-    cv2.imshow("Age-Gender", frame)
+    cv2.imshow("Age-Gender Detection", frame)
     
     k = cv2.waitKey(1)
     if k == ord('q'):
